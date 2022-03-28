@@ -5,4 +5,4 @@ del *.exe
 
 g++ -c .\minesweeperLib.c
 ar rvs .\minesweeperLib.a .\minesweeperLib.o
-g++ test.cpp .\minesweeperLib.a
+g++ test.c .\minesweeperLib.a

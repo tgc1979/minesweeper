@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
+
 #include "minesweeperLib.h"
 
 /**
@@ -15,6 +17,7 @@ typedef struct
     // Actual Board and My Board
     char realBoard[MAX_WIDTH][MAX_LEN];
     char myBoard[MAX_WIDTH][MAX_LEN];
+    unsigned int mineCnt;
 } MS_board;
 
 /**
@@ -35,6 +38,7 @@ void debugPrint(const char *str)
     puts(str);
 #endif
 }
+
 void MS_copyBoard(char myBoard[MAX_LEN][MAX_WIDTH], int len, int width)
 {
     for (int i = 0; i < board.boardLen; i++)
@@ -106,11 +110,12 @@ const unsigned int MS_getMaxLen()
 /**
  * @brief Initialise a new board with len x width squares
  */
-MS_LIB_STATUS_CODES MS_initRandomGameBoard(unsigned int len, unsigned int width)
+MS_LIB_STATUS_CODES MS_initRandomGameBoard(unsigned int len, unsigned int width , unsigned int mineCnt)
 {
     MS_LIB_STATUS_CODES ret = validateBoard(len, width);
     board.boardLen = len;
     board.boardWidth = width;
+    board.mineCnt=mineCnt;
     for (int i = 0; i < board.boardLen; i++)
     {
         for (int j = 0; j < board.boardWidth; j++)
@@ -119,11 +124,18 @@ MS_LIB_STATUS_CODES MS_initRandomGameBoard(unsigned int len, unsigned int width)
         }
     }
 
-    for (int i = 0; i < len; i++)
+   /* Intializes random number generator */
+    time_t t;
+    srand((unsigned) time(&t));
+
+    for (int i = 0; i <= mineCnt; i++)
     {
+     
+
         int random = rand() % (MAX_LEN*MAX_WIDTH);
         int x = (rand() * (MAX_LEN*MAX_WIDTH)) % len;
         int y = (rand() * (MAX_LEN*MAX_WIDTH)) % width;
+        printf("\n x:%d y:%d",x,y);
         board.realBoard[x][y] = '*';
     }
 
@@ -135,7 +147,7 @@ MS_LIB_STATUS_CODES MS_initRandomGameBoard(unsigned int len, unsigned int width)
 /**
  * @brief Initialise a new board with len x width squares using specified mine positions
  */
-MS_LIB_STATUS_CODES MS_initGameBoardWithMinePositions(unsigned int len, unsigned int width, unsigned int minePositions[][2])
+MS_LIB_STATUS_CODES MS_initGameBoardWithMinePositions(unsigned int len, unsigned int width, unsigned int minePositions[][2], unsigned int mineCnt)
 {
     debugPrint("IN MS_initGameBoardWithMinePositions\n");
     MS_LIB_STATUS_CODES ret = validateBoard(len, width);
@@ -153,6 +165,8 @@ MS_LIB_STATUS_CODES MS_initGameBoardWithMinePositions(unsigned int len, unsigned
 
     board.boardLen = len;
     board.boardWidth = width;
+    board.mineCnt=mineCnt;
+
     for (int i = 0; i < board.boardLen; i++)
     {
         for (int j = 0; j < board.boardWidth; j++)
@@ -161,7 +175,7 @@ MS_LIB_STATUS_CODES MS_initGameBoardWithMinePositions(unsigned int len, unsigned
         }
     }
 
-    for (int i = 0; i < len; i++)
+    for (int i = 0; i <= mineCnt; i++)
     {
         unsigned int x = minePositions[i][0];
         unsigned int y = minePositions[i][1];
@@ -171,4 +185,11 @@ MS_LIB_STATUS_CODES MS_initGameBoardWithMinePositions(unsigned int len, unsigned
     MS_printBoard(board.realBoard, len, width);
     debugPrint("OUT MS_initGameBoardWithMinePositions\n");
     return ret;
+}
+
+
+bool MS_executeGame(unsigned int x , unsigned int y)
+{
+
+return true;
 }

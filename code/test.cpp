@@ -4,6 +4,27 @@
 #include <time.h>
 #include "minesweeperLib.h"
 
+void printBoard(char myBoard[MAX_LEN][MAX_WIDTH], int len, int width)
+{
+    int i, j;
+    printf("\n");
+
+    printf("    ");
+
+    for (i = 0; i < len; i++)
+        printf("%d ", i);
+
+    printf("\n\n");
+
+    for (i = 0; i < len; i++)
+    {
+        printf("%d   ", i);
+
+        for (j = 0; j < width; j++)
+            printf("%c ", myBoard[i][j]);
+        printf("\n");
+    }
+}
 int main()
 {
     unsigned int isRandomBoard = 2;
@@ -33,16 +54,18 @@ int main()
     }
 
     char myBoard[MAX_LEN][MAX_WIDTH];
-    MS_copyBoard(myBoard, 8, 8);
-    MS_printBoard(myBoard, 8, 8);
     char command = 'C';
     int x,y;
+    bool isGameOver=false;
     do
     {
      command = 'C';
 	 printf("\n(C)lear or (F)lag a square.Followed by x y coordinates.");
 	 scanf("%c %d %d",&command, &x, &y);
-    } while (MS_executeGame(command,x,y));
+     isGameOver=MS_executeGame(command,x,y);
+     MS_getActualBoardState(myBoard, 8, 8);
+     printBoard(myBoard, 8, 8);
+    } while (isGameOver==false);
     
 
 };

@@ -30,7 +30,6 @@ MS_board board;
  */
 const unsigned int MS_getMaxWidth();
 const unsigned int MS_getMaxLen();
-// void MS_printBoard(char myBoard[MAX_WIDTH][MAX_LEN],int len,int width);
 
 void debugPrint(const char *str)
 {
@@ -43,7 +42,7 @@ bool isValid(int x,int y)
 {
     return true;
 }
-void MS_copyBoard(char myBoard[MAX_LEN][MAX_WIDTH], int len, int width)
+void MS_getActualBoardState(char myBoard[MAX_LEN][MAX_WIDTH], int len, int width)
 {
     for (int i = 0; i < board.boardLen; i++)
     {
@@ -54,27 +53,7 @@ void MS_copyBoard(char myBoard[MAX_LEN][MAX_WIDTH], int len, int width)
     }
 }
 
-void MS_printBoard(char myBoard[MAX_LEN][MAX_WIDTH], int len, int width)
-{
-    int i, j;
-    printf("\n");
 
-    printf("    ");
-
-    for (i = 0; i < len; i++)
-        printf("%d ", i);
-
-    printf("\n\n");
-
-    for (i = 0; i < len; i++)
-    {
-        printf("%d   ", i);
-
-        for (j = 0; j < width; j++)
-            printf("%c ", myBoard[i][j]);
-        printf("\n");
-    }
-}
 MS_LIB_STATUS_CODES validateBoard(unsigned int len, unsigned int width)
 {
     if (len <= 0 || width <= 0)
@@ -141,8 +120,7 @@ MS_LIB_STATUS_CODES MS_initRandomGameBoard(unsigned int len, unsigned int width,
         printf("\n x:%d y:%d", x, y);
         board.realBoard[x][y] = '*';
     }
-    MS_copyBoard(board.mines,board.boardLen,board.boardWidth);
-    MS_printBoard(board.realBoard, len, width);
+    MS_getActualBoardState(board.mines,board.boardLen,board.boardWidth);
 
     return ret;
 }
@@ -185,8 +163,7 @@ MS_LIB_STATUS_CODES MS_initGameBoardWithMinePositions(unsigned int len, unsigned
         printf("\nx:%d  y:%d",x,y  );
         board.realBoard[x][y] = '*';
     }
-    MS_copyBoard(board.mines,board.boardLen,board.boardWidth);
-    MS_printBoard(board.realBoard, len, width);
+    MS_getActualBoardState(board.mines,board.boardLen,board.boardWidth);
     debugPrint("OUT MS_initGameBoardWithMinePositions\n");
     return ret;
 }
@@ -315,6 +292,5 @@ bool MS_executeGame(char command , unsigned int x, unsigned int y)
     {
          board.realBoard[x][y]='F';        
     }
-    MS_printBoard(board.realBoard, board.boardLen,board.boardWidth);
-    return !isGameOver;
+    return isGameOver;
 }

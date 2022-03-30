@@ -26,7 +26,7 @@ MS_LIB_STATUS_CODES MS_initRandomGameBoard(unsigned int len , unsigned int width
 
 MS_LIB_STATUS_CODES MS_initGameBoardWithMinePositions(unsigned int len , unsigned int width , unsigned int minePositions[][2], unsigned int mineCnt);
 
-void MS_copyBoard(char myBoard[MAX_LEN][MAX_WIDTH],int len,int width);
+void MS_getActualBoardState(char myBoard[MAX_LEN][MAX_WIDTH],int len,int width);
 void MS_printBoard(char myBoard[MAX_LEN][MAX_WIDTH],int len,int width);
 bool MS_executeGame(char command,unsigned int x , unsigned int y);
 

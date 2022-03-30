@@ -22,17 +22,41 @@ typedef enum
     MS_LIB_STATUS_GAME_IN_POGRESS
 }MS_LIB_STATUS_CODES;
 
-const unsigned int MAX_WIDTH = 25; // max width of the board
-const unsigned int MAX_LEN = 25;   // max length of the board
+const unsigned int SIDE = 8;        
+const unsigned int MINE_CNT = 10;   
+
+typedef enum{
+initial,
+hasmine,
+flagged,
+cleared
+}CellState;
+
+typedef struct 
+{
+    CellState cellState;
+    int x;
+    int y;
+    /* data */
+    int adjMineCnt;
+}Cell;
+
+
+typedef struct
+{
+    unsigned int mineCnt;
+    unsigned int remainingMoves;
+    Cell cells[SIDE*SIDE];
+    Cell mines[MINE_CNT];
+} Game;
+
+
 
 const unsigned char * MS_getModuleVersion(void);
-
-MS_LIB_STATUS_CODES MS_initRandomGameBoard(unsigned int len , unsigned int width, unsigned int mineCnt);
-
-MS_LIB_STATUS_CODES MS_initGameBoardWithMinePositions(unsigned int len , unsigned int width , unsigned int minePositions[][2], unsigned int mineCnt);
-
-void MS_copyActualBoardTo(char myBoard[MAX_LEN][MAX_WIDTH],int len,int width);
-void MS_printBoard(char myBoard[MAX_LEN][MAX_WIDTH],int len,int width);
+MS_LIB_STATUS_CODES MS_GenRandomMines();
+MS_LIB_STATUS_CODES MS_GenUserProvidedMines( unsigned int minePositions[][2]);
+void MS_getGameState(Game destBoard);
 MS_LIB_STATUS_CODES MS_executeGame(char command,unsigned int x , unsigned int y);
+Cell getCellByCoordinates(int x , int y);
 
 #endif

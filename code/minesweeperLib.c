@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <string.h>
 
 #include "minesweeperLib.h"
 
@@ -9,62 +10,28 @@
  */
 
 const unsigned char MODULE_VERSION[] = "V2.0";
+Cell getCellByCoordinates(int x , int y);
+Cell * getCellPtrByCoordinates(int x , int y);
 
-typedef struct
-{
-    unsigned int boardLen;
-    unsigned int boardWidth;
-    // Actual Board and My Board
-    char realBoard[MAX_WIDTH][MAX_LEN];
-    char mines[MAX_WIDTH][MAX_LEN];
-    unsigned int mineCnt;
-    unsigned int remainingMoves;
-} MS_board;
 
 /**
  * @brief Globals
  */
-MS_board board;
+Game game;
 /**
  * @brief Utility functions
  */
 
-const unsigned int MS_getMaxWidth();
-const unsigned int MS_getMaxLen();
-
 bool isValid(int row, int col)
 {
-    return (row >= 0) && (row < MAX_LEN) &&
-           (col >= 0) && (col < MAX_WIDTH);
+    return (row >= 0) && (row < SIDE) &&
+           (col >= 0) && (col < SIDE);
 }
-void MS_copyActualBoardTo(char myBoard[MAX_LEN][MAX_WIDTH], int len, int width)
+void MS_getGameState(Game destBoard)
 {
-    for (int i = 0; i < board.boardLen; i++)
-    {
-        for (int j = 0; j < board.boardWidth; j++)
-        {
-            myBoard[i][j] = board.realBoard[i][j];
-        }
-    }
+   memcpy(&destBoard,&game,sizeof(Game));
 }
 
-MS_LIB_STATUS_CODES validateBoard(unsigned int len, unsigned int width, int mineCnt)
-{
-    if (len <= 0 || width <= 0)
-    {
-        return MS_LIB_STATUS_INVALID_BOARD_SIZE;
-    }
-    if (len > MS_getMaxLen() || width > MS_getMaxWidth())
-    {
-        return MS_LIB_STATUS_UNSUPPORTED_BOARD_SIZE;
-    }
-    if (mineCnt >= len * width)
-    {
-        return MS_LIB_STATUS_INVALID_MINE_CNT;
-    }
-
-    return MS_LIB_STATUS_OK;
-}
 /**
  * @brief Returns null terminated string of 4 characters
  */
@@ -73,116 +40,124 @@ const unsigned char *MS_getModuleVersion(void)
     return MODULE_VERSION;
 }
 
-/**
- * @brief Returns max width of the board
- */
-const unsigned int MS_getMaxWidth()
+void initGame(void)
 {
-    return MAX_WIDTH;
+    game.mineCnt = MINE_CNT;
+    game.remainingMoves = SIDE * SIDE - MINE_CNT;
+
+    for (int i = 0; i < SIDE; i++)
+    {
+        for (int j = 0; j < SIDE; j++)
+        {
+            game.cells[i * SIDE + j].cellState = initial;
+            game.cells[i * SIDE + j].x = i * SIDE;
+            game.cells[i * SIDE + j].y = j;
+        }
+    }
 }
 
-/**
- * @brief Returns max len of  the board
- */
-const unsigned int MS_getMaxLen()
+void addMines(void)
 {
-    return MAX_LEN;
+    for (int mineInd = 0; mineInd < MINE_CNT; mineInd++)
+    {
+        int x = game.mines[mineInd].x
+        int y = game.mines[mineInd].y;
+        Cell *cell = getCellPtrByCoordinates(x,y);
+        cell->cellState = hasmine;
+    }
 }
 
+
+Cell getCellByCoordinates(int x , int y)
+{
+    Cell currCell;
+     for (int i = 0; i < SIDE; i++)
+        {
+            for (int j = 0; j < SIDE; j++)
+            {
+                currCell = game.cells[i * SIDE + j];
+                if(currCell.x == x && currCell.y == y)
+                    break;
+                
+            }
+        }
+
+    return currCell;
+}
+
+Cell * getCellPtrByCoordinates(int x , int y)
+{
+    Cell *currCell;
+     for (int i = 0; i < SIDE; i++)
+        {
+            for (int j = 0; j < SIDE; j++)
+            {
+                currCell = &game.cells[i * SIDE + j];
+                if(currCell->x == x && currCell->y == y)
+                    break;
+                
+            }
+        }
+
+    return currCell;
+}
 /**
  * @brief Initialise a new board with len x width squares
  */
-MS_LIB_STATUS_CODES MS_initRandomGameBoard(unsigned int len, unsigned int width, unsigned int mineCnt)
+MS_LIB_STATUS_CODES MS_GenRandomMines()
 {
-    MS_LIB_STATUS_CODES ret = validateBoard(len, width, mineCnt);
-    if (ret != MS_LIB_STATUS_OK)
-    {
-        return ret;
-    }
-    board.boardLen = len;
-    board.boardWidth = width;
-    board.mineCnt = mineCnt;
-    board.remainingMoves = board.boardLen * board.boardWidth - board.mineCnt;
 
-    for (int i = 0; i < board.boardLen; i++)
-    {
-        for (int j = 0; j < board.boardWidth; j++)
-        {
-            board.realBoard[i][j] = '-';
-        }
-    }
+    initGame();
 
     /* Intializes random number generator */
     time_t t;
     srand((unsigned)time(&t));
-
-    for (int i = 0; i < mineCnt; i++)
+    for (int i = 0; i < MINE_CNT; i++)
     {
-
-        int random = rand() % (MAX_LEN * MAX_WIDTH);
-        int x = (rand() * (MAX_LEN * MAX_WIDTH)) % len;
-        int y = (rand() * (MAX_LEN * MAX_WIDTH)) % width;
-        board.realBoard[x][y] = '*';
+        int x = (rand() * (SIDE * SIDE)) / SIDE;
+        int y = (rand() * (SIDE * SIDE)) % SIDE;
+        game.mines[i].cellState = hasmine;
+        game.mines[i].x = x;
+        game.mines[i].y = y;
     }
-    MS_copyActualBoardTo(board.mines, board.boardLen, board.boardWidth);
 
-    return ret;
+    addMines();
+
+    return MS_LIB_STATUS_OK;
 }
 
 /**
  * @brief Initialise a new board with len x width squares using specified mine positions
  */
-MS_LIB_STATUS_CODES MS_initGameBoardWithMinePositions(unsigned int len, unsigned int width, unsigned int minePositions[][2], unsigned int mineCnt)
+MS_LIB_STATUS_CODES MS_GenUserProvidedMines( unsigned int minePositions[][2])
 {
-    MS_LIB_STATUS_CODES ret = validateBoard(len, width, mineCnt);
-
-    if (ret != MS_LIB_STATUS_OK)
-    {
-        return ret;
-    }
-    for (int i = 0; i < len; i++)
+    initGame();
+    for (int i = 0; i < MINE_CNT; i++)
     {
         unsigned int x = minePositions[i][0];
         unsigned int y = minePositions[i][1];
 
-        if ((x < 0 || x > len) || (y < 0 || y > width))
-        {
-            return MS_LIB_STATUS_INVALID_LOCATION;
-        }
+        game.mines[i].cellState = hasmine;
+        game.mines[i].x = x;
+        game.mines[i].y = y;
     }
 
-    board.boardLen = len;
-    board.boardWidth = width;
-    board.mineCnt = mineCnt;
-    board.remainingMoves = board.boardLen * board.boardWidth - board.mineCnt;
+    addMines();
+   return MS_LIB_STATUS_OK;
 
-    for (int i = 0; i < board.boardLen; i++)
-    {
-        for (int j = 0; j < board.boardWidth; j++)
-        {
-            board.realBoard[i][j] = '-';
-        }
-    }
-
-    for (int i = 0; i < mineCnt; i++)
-    {
-        unsigned int x = minePositions[i][0];
-        unsigned int y = minePositions[i][1];
-        board.realBoard[x][y] = '*';
-    }
-
-    MS_copyActualBoardTo(board.mines, board.boardLen, board.boardWidth);
-    return ret;
 }
 
 bool isClearedAlready(int x, int y)
 {
-    return ((board.realBoard[x][y] != '-') && (board.realBoard[x][y] != 'F'));
+    Cell cell = getCellByCoordinates(x,y);
+    return (cell.cellState == cleared);
 }
 bool isMine(int x, int y)
 {
-    return (board.realBoard[x][y] == '*');
+    Cell cell = getCellByCoordinates(x,y);
+    return (cell.cellState == hasmine);
 }
+
 
 // A Function to count the number of
 // mines in the adjacent cells
@@ -191,7 +166,7 @@ int checkNeighbours(int row, int col)
 
     int i;
     int count = 0;
-
+    Cell cell = getCellByCoordinates(row,col);
     if (isValid(row - 1, col) == true)
     {
         if (isMine(row - 1, col) == true)
@@ -273,7 +248,7 @@ MS_LIB_STATUS_CODES MS_executeGame(char command, unsigned int x, unsigned int y)
     {
     case 'C':
     case 'c':
-
+    {
         if (isMine(x, y))
         {
             gameState = MS_LIB_STATUS_GAME_LOST;
@@ -290,18 +265,22 @@ MS_LIB_STATUS_CODES MS_executeGame(char command, unsigned int x, unsigned int y)
                 int adjacentMines = checkNeighbours(x, y);
                 if (adjacentMines != 0)
                 {
-                    board.realBoard[x][y] = adjacentMines + '0';
+                   Cell *cell = getCellPtrByCoordinates(x,y);
+                   cell->adjMineCnt=adjacentMines;
                 }
             }
         }
-
+    }
         break;
 
     case 'F':
     case 'f':
-        if (board.realBoard[x][y] == '*' || board.realBoard[x][y] == '-')
         {
-            board.realBoard[x][y] = 'F';
+         Cell *cell = getCellPtrByCoordinates(x,y);
+         if(cell->cellState!=cleared)
+           { 
+               cell->cellState=flagged;
+           }
         }
         break;
 
@@ -312,7 +291,7 @@ MS_LIB_STATUS_CODES MS_executeGame(char command, unsigned int x, unsigned int y)
 
     if (gameState == MS_LIB_STATUS_GAME_IN_POGRESS)
     {
-        if (--board.remainingMoves == 0)
+        if (--game.remainingMoves == 0)
         {
             gameState = MS_LIB_STATUS_GAME_WON;
         }

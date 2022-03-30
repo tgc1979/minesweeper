@@ -10,9 +10,20 @@
  */
 
 const unsigned char MODULE_VERSION[] = "V2.0";
-Cell getCellByCoordinates(int x , int y);
-Cell * getCellPtrByCoordinates(int x , int y);
 
+/**
+ * @brief Extern function declarations
+ */
+Cell getCellByCoordinates(int x, int y);
+void MS_getGameState(Game *destBoard);
+const unsigned char *MS_getModuleVersion(void);
+MS_LIB_STATUS_CODES MS_GenRandomMines();
+MS_LIB_STATUS_CODES MS_GenUserProvidedMines(unsigned int minePositions[][2]);
+
+/**
+ * @brief Static functions declarations
+ */
+static Cell *getCellPtrByCoordinates(int x, int y);
 
 /**
  * @brief Globals
@@ -22,87 +33,98 @@ Game game;
  * @brief Utility functions
  */
 
+/**
+ * @brief checks if given cartessian coordinates are within the game plane
+ */
 bool isValid(int row, int col)
 {
     return (row >= 0) && (row < SIDE) &&
            (col >= 0) && (col < SIDE);
 }
-void MS_getGameState(Game destBoard)
+
+/**
+ * @brief copies internal game state to user provided game pointer
+ */
+void MS_getGameState(Game *destBoard)
 {
-   memcpy(&destBoard,&game,sizeof(Game));
+    memcpy(destBoard, &game, sizeof(Game));
 }
 
 /**
- * @brief Returns null terminated string of 4 characters
+ * @brief Returns null terminated string of 4 characters to represent module version
  */
 const unsigned char *MS_getModuleVersion(void)
 {
     return MODULE_VERSION;
 }
 
+/**
+ * @brief initialises a game to default values
+ */
 void initGame(void)
 {
     game.mineCnt = MINE_CNT;
     game.remainingMoves = SIDE * SIDE - MINE_CNT;
 
-    for (int i = 0; i < SIDE; i++)
+    for (int i = 0; i < SIDE * SIDE; i++)
     {
-        for (int j = 0; j < SIDE; j++)
-        {
-            game.cells[i * SIDE + j].cellState = initial;
-            game.cells[i * SIDE + j].x = i * SIDE;
-            game.cells[i * SIDE + j].y = j;
-        }
+        game.cells[i].cellState = initial;
+        game.cells[i].x = i / SIDE;
+        game.cells[i].y = i % SIDE;
     }
 }
 
+/**
+ * @brief reads the mine positions and sets them in actual game cells
+ */
 void addMines(void)
 {
     for (int mineInd = 0; mineInd < MINE_CNT; mineInd++)
     {
-        int x = game.mines[mineInd].x
+        int x = game.mines[mineInd].x;
         int y = game.mines[mineInd].y;
-        Cell *cell = getCellPtrByCoordinates(x,y);
+        Cell *cell = getCellPtrByCoordinates(x, y);
         cell->cellState = hasmine;
     }
 }
 
-
-Cell getCellByCoordinates(int x , int y)
+/**
+ * @brief Returns the copy of a cell in given coordinates.
+ */
+Cell getCellByCoordinates(int x, int y)
 {
     Cell currCell;
-     for (int i = 0; i < SIDE; i++)
-        {
-            for (int j = 0; j < SIDE; j++)
-            {
-                currCell = game.cells[i * SIDE + j];
-                if(currCell.x == x && currCell.y == y)
-                    break;
-                
-            }
-        }
+    for (int i = 0; i < SIDE * SIDE; i++)
+    {
+
+        currCell = game.cells[i];
+        if (currCell.x == x && currCell.y == y)
+            break;
+    }
 
     return currCell;
 }
 
-Cell * getCellPtrByCoordinates(int x , int y)
-{
-    Cell *currCell;
-     for (int i = 0; i < SIDE; i++)
-        {
-            for (int j = 0; j < SIDE; j++)
-            {
-                currCell = &game.cells[i * SIDE + j];
-                if(currCell->x == x && currCell->y == y)
-                    break;
-                
-            }
-        }
-
-    return currCell;
-}
 /**
- * @brief Initialise a new board with len x width squares
+ * @brief Returns pointer to a cell in given coordinates.
+ */
+Cell *getCellPtrByCoordinates(int x, int y)
+{
+    Cell *currCell = 0;
+    for (int i = 0; i < SIDE * SIDE; i++)
+    {
+        currCell = &game.cells[i];
+        if (currCell->x == x && currCell->y == y)
+            break;
+        else
+            currCell = 0;
+    }
+
+    return currCell;
+}
+
+/**
+ * @brief Initialise a new board with random mine cells
  */
 MS_LIB_STATUS_CODES MS_GenRandomMines()
 {
@@ -111,14 +133,15 @@ MS_LIB_STATUS_CODES MS_GenRandomMines()
 
     /* Intializes random number generator */
     time_t t;
-    srand((unsigned)time(&t));
+    srand(time(NULL));   // Initialization, should only be called once.
     for (int i = 0; i < MINE_CNT; i++)
     {
-        int x = (rand() * (SIDE * SIDE)) / SIDE;
-        int y = (rand() * (SIDE * SIDE)) % SIDE;
+      
+        unsigned int random = (rand()%20 )% SIDE*SIDE;
+        Cell cell = game.cells[random];
         game.mines[i].cellState = hasmine;
-        game.mines[i].x = x;
-        game.mines[i].y = y;
+        game.mines[i].x = cell.x;
+        game.mines[i].y = cell.y;
     }
 
     addMines();
@@ -127,9 +150,9 @@ MS_LIB_STATUS_CODES MS_GenRandomMines()
 }
 
 /**
- * @brief Initialise a new board with len x width squares using specified mine positions
+ * @brief Initialise a new board with user provided mine cells
  */
-MS_LIB_STATUS_CODES MS_GenUserProvidedMines( unsigned int minePositions[][2])
+MS_LIB_STATUS_CODES MS_GenUserProvidedMines(unsigned int minePositions[][2])
 {
     initGame();
     for (int i = 0; i < MINE_CNT; i++)
@@ -143,93 +166,86 @@ MS_LIB_STATUS_CODES MS_GenUserProvidedMines( unsigned int minePositions[][2])
     }
 
     addMines();
-   return MS_LIB_STATUS_OK;
-
+    return MS_LIB_STATUS_OK;
 }
 
+/**
+ * @brief Checks if a cell is cleared
+ */
 bool isClearedAlready(int x, int y)
 {
-    Cell cell = getCellByCoordinates(x,y);
+    Cell cell = getCellByCoordinates(x, y);
     return (cell.cellState == cleared);
 }
+
+/**
+ * @brief Checks if a cell has mine
+ */
 bool isMine(int x, int y)
 {
-    Cell cell = getCellByCoordinates(x,y);
+    Cell cell = getCellByCoordinates(x, y);
     return (cell.cellState == hasmine);
 }
 
-
-// A Function to count the number of
-// mines in the adjacent cells
+/**
+ * @brief Counts the number of mines in adjacent cells for the given cell coordinates
+ */
 int checkNeighbours(int row, int col)
 {
 
     int i;
     int count = 0;
-    Cell cell = getCellByCoordinates(row,col);
+    Cell cell = getCellByCoordinates(row, col);
+    // left
     if (isValid(row - 1, col) == true)
     {
         if (isMine(row - 1, col) == true)
             count++;
     }
 
-    //----------- 2nd Neighbour (South) ------------
-
-    // Only process this cell if this is a valid one
+    // right
     if (isValid(row + 1, col) == true)
     {
         if (isMine(row + 1, col) == true)
             count++;
     }
 
-    //----------- 3rd Neighbour (East) ------------
-
-    // Only process this cell if this is a valid one
+    // up
     if (isValid(row, col + 1) == true)
     {
         if (isMine(row, col + 1) == true)
             count++;
     }
 
-    //----------- 4th Neighbour (West) ------------
-
-    // Only process this cell if this is a valid one
+    // down
     if (isValid(row, col - 1) == true)
     {
         if (isMine(row, col - 1) == true)
             count++;
     }
 
-    //----------- 5th Neighbour (North-East) ------------
-
-    // Only process this cell if this is a valid one
+    // left up
     if (isValid(row - 1, col + 1) == true)
     {
         if (isMine(row - 1, col + 1) == true)
             count++;
     }
 
-    //----------- 6th Neighbour (North-West) ------------
-
-    // Only process this cell if this is a valid one
+    // left down
     if (isValid(row - 1, col - 1) == true)
     {
         if (isMine(row - 1, col - 1) == true)
             count++;
     }
 
-    //----------- 7th Neighbour (South-East) ------------
-
-    // Only process this cell if this is a valid one
+    // right up
     if (isValid(row + 1, col + 1) == true)
     {
         if (isMine(row + 1, col + 1) == true)
             count++;
     }
 
-    //----------- 8th Neighbour (South-West) ------------
-
-    // Only process this cell if this is a valid one
+    // right dpwn
     if (isValid(row + 1, col - 1) == true)
     {
         if (isMine(row + 1, col - 1) == true)
@@ -239,6 +255,9 @@ int checkNeighbours(int row, int col)
     return (count);
 }
 
+/**
+ * @brief Makes the move provided by external command and coordinates
+ */
 MS_LIB_STATUS_CODES MS_executeGame(char command, unsigned int x, unsigned int y)
 {
     MS_LIB_STATUS_CODES gameState = MS_LIB_STATUS_GAME_IN_POGRESS;
@@ -257,7 +276,6 @@ MS_LIB_STATUS_CODES MS_executeGame(char command, unsigned int x, unsigned int y)
         {
             if (isClearedAlready(x, y))
             {
-                printf("\n cell cleared already");
                 gameState = MS_LIB_STATUS_CELL_CLEARED_ALREADY;
             }
             else
@@ -265,24 +283,39 @@ MS_LIB_STATUS_CODES MS_executeGame(char command, unsigned int x, unsigned int y)
                 int adjacentMines = checkNeighbours(x, y);
                 if (adjacentMines != 0)
                 {
-                   Cell *cell = getCellPtrByCoordinates(x,y);
-                   cell->adjMineCnt=adjacentMines;
+                    Cell *cell = getCellPtrByCoordinates(x, y);
+                    if (!cell)
+                    {
+                        gameState = MS_LIB_STATUS_INVALID_LOCATION;
+                    }
+                    else
+                    {
+                        cell->cellState = cleared;
+                        cell->adjMineCnt = adjacentMines;
+                    }
                 }
             }
         }
     }
-        break;
+    break;
 
     case 'F':
     case 'f':
+    {
+        Cell *cell = getCellPtrByCoordinates(x, y);
+        if (!cell)
         {
-         Cell *cell = getCellPtrByCoordinates(x,y);
-         if(cell->cellState!=cleared)
-           { 
-               cell->cellState=flagged;
-           }
+            gameState = MS_LIB_STATUS_INVALID_LOCATION;
         }
-        break;
+        else
+        {
+            if (cell->cellState != cleared)
+            {
+                cell->cellState = flagged;
+            }
+        }
+    }
+    break;
 
     default:
         gameState = MS_LIB_STATUS_INVALID_CMD;

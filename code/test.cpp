@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include "minesweeperLib.h"
+static     Game myGame;
 
 void printBoard(Game game)
 {
@@ -21,7 +22,10 @@ int i, j;
 
         for (j=0; j<SIDE; j++)
          {
-             Cell cell =  getCellByCoordinates(i*SIDE , j);
+             int x = i;
+             int y = j%SIDE;
+
+             Cell cell =  getCellByCoordinates( x,y);
              switch(cell.cellState)
                 {
                  case hasmine:
@@ -44,7 +48,7 @@ int i, j;
 }
 int main()
 {
-    unsigned int isRandomBoard = 2;
+    unsigned int isRandomBoard = 1;
     //   printf("Press (1)To initialise a random board or (2) To enter mine positions:");
     //   scanf("%u",&isRandomBoard);
 
@@ -74,12 +78,11 @@ int main()
 
 
 
-    Game myGame;
     char command = 'C';
     int x, y;
     MS_LIB_STATUS_CODES gameState = MS_LIB_STATUS_GAME_IN_POGRESS;
     
-    MS_getGameState(myGame);
+    MS_getGameState(&myGame);
     printBoard(myGame);
 
 
@@ -89,7 +92,7 @@ int main()
         printf("\n(C)lear or (F)lag a square.Followed by x y coordinates.");
         scanf("%c %d %d", &command, &x, &y);
         gameState = MS_executeGame(command, x, y);
-        MS_getGameState(myGame);
+        MS_getGameState(&myGame);
         printBoard(myGame);
     } while (gameState == MS_LIB_STATUS_GAME_IN_POGRESS || gameState == MS_LIB_STATUS_INVALID_CMD|| gameState == MS_LIB_STATUS_CELL_CLEARED_ALREADY);
 

@@ -1,6 +1,10 @@
 #ifndef C_STATIC_LIB_MINESWEEPER_LIBRARY_H
 #define C_STATIC_LIB_MINESWEEPER_LIBRARY_H
 
+#if defined (__cplusplus)
+extern "C" {
+#endif
+
 #include <stdio.h>
 #include <stdbool.h>
 
@@ -55,8 +59,13 @@ typedef struct
 const unsigned char * MS_getModuleVersion(void);
 MS_LIB_STATUS_CODES MS_GenRandomMines();
 MS_LIB_STATUS_CODES MS_GenUserProvidedMines( unsigned int minePositions[][2]);
-void MS_getGameState(Game destBoard);
+void MS_getGameState(Game *destBoard);
 MS_LIB_STATUS_CODES MS_executeGame(char command,unsigned int x , unsigned int y);
-Cell getCellByCoordinates(int x , int y);
+extern Cell getCellByCoordinates(int x , int y);
+
+#if defined (__cplusplus)
+}
+#endif
 
 #endif
+

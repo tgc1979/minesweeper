@@ -6,13 +6,13 @@
 
 int main()
 {
-    unsigned int isRandomBoard = 1;
+    unsigned int isRandomBoard = 2;
     //   printf("Press (1)To initialise a random board or (2) To enter mine positions:");
     //   scanf("%u",&isRandomBoard);
 
-    if (isRandomBoard != 0 && isRandomBoard != 1)
+    if (isRandomBoard != 1 && isRandomBoard != 2)
     {
-        printf("Invalid init bumethod is choosen\n");
+        printf("Invalid board initialisation is choosen\n");
         return -1;
     }
 
@@ -35,8 +35,14 @@ int main()
     char myBoard[MAX_LEN][MAX_WIDTH];
     MS_copyBoard(myBoard, 8, 8);
     MS_printBoard(myBoard, 8, 8);
+    char command = 'C';
+    int x,y;
+    do
+    {
+     command = 'C';
+	 printf("\n(C)lear or (F)lag a square.Followed by x y coordinates.");
+	 scanf("%c %d %d",&command, &x, &y);
+    } while (MS_executeGame(command,x,y));
+    
 
-	printf("Enter your move, (row, column) -> ");
-	scanf("%d %d", x, y);
-    // puts(MS_getModuleVersion());
-}
+};

@@ -28,5 +28,6 @@ MS_LIB_STATUS_CODES MS_initGameBoardWithMinePositions(unsigned int len , unsigne
 
 void MS_copyBoard(char myBoard[MAX_LEN][MAX_WIDTH],int len,int width);
 void MS_printBoard(char myBoard[MAX_LEN][MAX_WIDTH],int len,int width);
+bool MS_executeGame(char command,unsigned int x , unsigned int y);
 
 #endif

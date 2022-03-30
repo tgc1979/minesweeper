@@ -18,31 +18,26 @@ typedef struct
     char realBoard[MAX_WIDTH][MAX_LEN];
     char mines[MAX_WIDTH][MAX_LEN];
     unsigned int mineCnt;
+    unsigned int remainingMoves;
 } MS_board;
 
 /**
  * @brief Globals
  */
 MS_board board;
-
 /**
  * @brief Utility functions
  */
+
 const unsigned int MS_getMaxWidth();
 const unsigned int MS_getMaxLen();
 
-void debugPrint(const char *str)
+bool isValid(int row, int col)
 {
-#ifdef DEBUG_MS_LIB
-    puts(str);
-#endif
+    return (row >= 0) && (row < MAX_LEN) &&
+           (col >= 0) && (col < MAX_WIDTH);
 }
-
-bool isValid(int x,int y)
-{
-    return true;
-}
-void MS_getActualBoardState(char myBoard[MAX_LEN][MAX_WIDTH], int len, int width)
+void MS_copyActualBoardTo(char myBoard[MAX_LEN][MAX_WIDTH], int len, int width)
 {
     for (int i = 0; i < board.boardLen; i++)
     {
@@ -53,8 +48,7 @@ void MS_getActualBoardState(char myBoard[MAX_LEN][MAX_WIDTH], int len, int width
     }
 }
 
-
-MS_LIB_STATUS_CODES validateBoard(unsigned int len, unsigned int width)
+MS_LIB_STATUS_CODES validateBoard(unsigned int len, unsigned int width, int mineCnt)
 {
     if (len <= 0 || width <= 0)
     {
@@ -64,6 +58,11 @@ MS_LIB_STATUS_CODES validateBoard(unsigned int len, unsigned int width)
     {
         return MS_LIB_STATUS_UNSUPPORTED_BOARD_SIZE;
     }
+    if (mineCnt >= len * width)
+    {
+        return MS_LIB_STATUS_INVALID_MINE_CNT;
+    }
+
     return MS_LIB_STATUS_OK;
 }
 /**
@@ -95,10 +94,16 @@ const unsigned int MS_getMaxLen()
  */
 MS_LIB_STATUS_CODES MS_initRandomGameBoard(unsigned int len, unsigned int width, unsigned int mineCnt)
 {
-    MS_LIB_STATUS_CODES ret = validateBoard(len, width);
+    MS_LIB_STATUS_CODES ret = validateBoard(len, width, mineCnt);
+    if (ret != MS_LIB_STATUS_OK)
+    {
+        return ret;
+    }
     board.boardLen = len;
     board.boardWidth = width;
     board.mineCnt = mineCnt;
+    board.remainingMoves = board.boardLen * board.boardWidth - board.mineCnt;
+
     for (int i = 0; i < board.boardLen; i++)
     {
         for (int j = 0; j < board.boardWidth; j++)
@@ -111,16 +116,15 @@ MS_LIB_STATUS_CODES MS_initRandomGameBoard(unsigned int len, unsigned int width,
     time_t t;
     srand((unsigned)time(&t));
 
-    for (int i = 0; i <= mineCnt; i++)
+    for (int i = 0; i < mineCnt; i++)
     {
 
         int random = rand() % (MAX_LEN * MAX_WIDTH);
         int x = (rand() * (MAX_LEN * MAX_WIDTH)) % len;
         int y = (rand() * (MAX_LEN * MAX_WIDTH)) % width;
-        printf("\n x:%d y:%d", x, y);
         board.realBoard[x][y] = '*';
     }
-    MS_getActualBoardState(board.mines,board.boardLen,board.boardWidth);
+    MS_copyActualBoardTo(board.mines, board.boardLen, board.boardWidth);
 
     return ret;
 }
@@ -130,15 +134,18 @@ MS_LIB_STATUS_CODES MS_initRandomGameBoard(unsigned int len, unsigned int width,
  */
 MS_LIB_STATUS_CODES MS_initGameBoardWithMinePositions(unsigned int len, unsigned int width, unsigned int minePositions[][2], unsigned int mineCnt)
 {
-    debugPrint("IN MS_initGameBoardWithMinePositions\n");
-    MS_LIB_STATUS_CODES ret = validateBoard(len, width);
+    MS_LIB_STATUS_CODES ret = validateBoard(len, width, mineCnt);
 
+    if (ret != MS_LIB_STATUS_OK)
+    {
+        return ret;
+    }
     for (int i = 0; i < len; i++)
     {
         unsigned int x = minePositions[i][0];
         unsigned int y = minePositions[i][1];
 
-        if ((x < 0 || x > len) || (y < 0 || y > len))
+        if ((x < 0 || x > len) || (y < 0 || y > width))
         {
             return MS_LIB_STATUS_INVALID_LOCATION;
         }
@@ -147,6 +154,7 @@ MS_LIB_STATUS_CODES MS_initGameBoardWithMinePositions(unsigned int len, unsigned
     board.boardLen = len;
     board.boardWidth = width;
     board.mineCnt = mineCnt;
+    board.remainingMoves = board.boardLen * board.boardWidth - board.mineCnt;
 
     for (int i = 0; i < board.boardLen; i++)
     {
@@ -160,14 +168,17 @@ MS_LIB_STATUS_CODES MS_initGameBoardWithMinePositions(unsigned int len, unsigned
     {
         unsigned int x = minePositions[i][0];
         unsigned int y = minePositions[i][1];
-        printf("\nx:%d  y:%d",x,y  );
         board.realBoard[x][y] = '*';
     }
-    MS_getActualBoardState(board.mines,board.boardLen,board.boardWidth);
-    debugPrint("OUT MS_initGameBoardWithMinePositions\n");
+
+    MS_copyActualBoardTo(board.mines, board.boardLen, board.boardWidth);
     return ret;
 }
 
+bool isClearedAlready(int x, int y)
+{
+    return ((board.realBoard[x][y] != '-') && (board.realBoard[x][y] != 'F'));
+}
 bool isMine(int x, int y)
 {
     return (board.realBoard[x][y] == '*');
@@ -178,119 +189,133 @@ bool isMine(int x, int y)
 int checkNeighbours(int row, int col)
 {
 
-	int i;
-	int count = 0;
+    int i;
+    int count = 0;
 
-		if (isValid (row-1, col) == true)
-		{
-			if (isMine (row-1, col) == true)
-			count++;
-		}
-
-	//----------- 2nd Neighbour (South) ------------
-
-		// Only process this cell if this is a valid one
-		if (isValid (row+1, col) == true)
-		{
-			if (isMine (row+1, col) == true)
-			count++;
-		}
-
-	//----------- 3rd Neighbour (East) ------------
-
-		// Only process this cell if this is a valid one
-		if (isValid (row, col+1) == true)
-		{
-			if (isMine (row, col+1) == true)
-			count++;
-		}
-
-	//----------- 4th Neighbour (West) ------------
-
-		// Only process this cell if this is a valid one
-		if (isValid (row, col-1) == true)
-		{
-			if (isMine (row, col-1) == true)
-			count++;
-		}
-
-	//----------- 5th Neighbour (North-East) ------------
-
-		// Only process this cell if this is a valid one
-		if (isValid (row-1, col+1) == true)
-		{
-			if (isMine (row-1, col+1) == true)
-			count++;
-		}
-
-	//----------- 6th Neighbour (North-West) ------------
-
-		// Only process this cell if this is a valid one
-		if (isValid (row-1, col-1) == true)
-		{
-			if (isMine (row-1, col-1) == true)
-			count++;
-		}
-
-	//----------- 7th Neighbour (South-East) ------------
-
-		// Only process this cell if this is a valid one
-		if (isValid (row+1, col+1) == true)
-		{
-			if (isMine (row+1, col+1) == true)
-			count++;
-		}
-
-	//----------- 8th Neighbour (South-West) ------------
-
-		// Only process this cell if this is a valid one
-		if (isValid (row+1, col-1) == true)
-		{
-			if (isMine (row+1, col-1) == true)
-			count++;
-		}
-
-	return (count);
-}
-
-void revealMines(void)
-{
-   for (int i = 0; i < board.boardLen; i++)
+    if (isValid(row - 1, col) == true)
     {
-        for (int j = 0; j < board.boardWidth; j++)
-        {
-            if(board.mines[i][j] == '*')
-            {
-                board.realBoard[i][j] = '*';
-            }
-        }
+        if (isMine(row - 1, col) == true)
+            count++;
     }
 
-}
-bool MS_executeGame(char command , unsigned int x, unsigned int y)
-{
-    bool isGameOver=false;
-    
-    if(command=='C')
+    //----------- 2nd Neighbour (South) ------------
+
+    // Only process this cell if this is a valid one
+    if (isValid(row + 1, col) == true)
     {
-    if(isMine(x,y))
+        if (isMine(row + 1, col) == true)
+            count++;
+    }
+
+    //----------- 3rd Neighbour (East) ------------
+
+    // Only process this cell if this is a valid one
+    if (isValid(row, col + 1) == true)
+    {
+        if (isMine(row, col + 1) == true)
+            count++;
+    }
+
+    //----------- 4th Neighbour (West) ------------
+
+    // Only process this cell if this is a valid one
+    if (isValid(row, col - 1) == true)
+    {
+        if (isMine(row, col - 1) == true)
+            count++;
+    }
+
+    //----------- 5th Neighbour (North-East) ------------
+
+    // Only process this cell if this is a valid one
+    if (isValid(row - 1, col + 1) == true)
+    {
+        if (isMine(row - 1, col + 1) == true)
+            count++;
+    }
+
+    //----------- 6th Neighbour (North-West) ------------
+
+    // Only process this cell if this is a valid one
+    if (isValid(row - 1, col - 1) == true)
+    {
+        if (isMine(row - 1, col - 1) == true)
+            count++;
+    }
+
+    //----------- 7th Neighbour (South-East) ------------
+
+    // Only process this cell if this is a valid one
+    if (isValid(row + 1, col + 1) == true)
+    {
+        if (isMine(row + 1, col + 1) == true)
+            count++;
+    }
+
+    //----------- 8th Neighbour (South-West) ------------
+
+    // Only process this cell if this is a valid one
+    if (isValid(row + 1, col - 1) == true)
+    {
+        if (isMine(row + 1, col - 1) == true)
+            count++;
+    }
+
+    return (count);
+}
+
+MS_LIB_STATUS_CODES MS_executeGame(char command, unsigned int x, unsigned int y)
+{
+    MS_LIB_STATUS_CODES gameState = MS_LIB_STATUS_GAME_IN_POGRESS;
+
+    switch (command)
+
+    {
+    case 'C':
+    case 'c':
+
+        if (isMine(x, y))
         {
-          printf("\n Hit a mine at %d %d",x,y);  
-          isGameOver=true;
-          revealMines();
+            gameState = MS_LIB_STATUS_GAME_LOST;
         }
         else
         {
-            int adjacentMines = checkNeighbours(x,y);
-            if(adjacentMines != 0)
+            if (isClearedAlready(x, y))
             {
-                board.realBoard[x][y]=adjacentMines+'0';
+                printf("\n cell cleared already");
+                gameState = MS_LIB_STATUS_CELL_CLEARED_ALREADY;
+            }
+            else
+            {
+                int adjacentMines = checkNeighbours(x, y);
+                if (adjacentMines != 0)
+                {
+                    board.realBoard[x][y] = adjacentMines + '0';
+                }
             }
         }
+
+        break;
+
+    case 'F':
+    case 'f':
+        if (board.realBoard[x][y] == '*' || board.realBoard[x][y] == '-')
+        {
+            board.realBoard[x][y] = 'F';
+        }
+        break;
+
+    default:
+        gameState = MS_LIB_STATUS_INVALID_CMD;
+        break;
     }
-    else if(command=='F')
+
+    if (gameState == MS_LIB_STATUS_GAME_IN_POGRESS)
     {
-         board.realBoard[x][y]='F';        
+        if (--board.remainingMoves == 0)
+        {
+            gameState = MS_LIB_STATUS_GAME_WON;
+        }
     }
-    return isGameOver;
+    return gameState;
 }

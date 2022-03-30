@@ -10,11 +10,16 @@
 
 typedef enum
 {
-    MS_LIB_STATUS_OK=1,
-    MS_LIB_STATUS_INVALID_BOARD_SIZE=-1,
-    MS_LIB_STATUS_UNSUPPORTED_BOARD_SIZE=-2,
-    MS_LIB_STATUS_INVALID_LOCATION=-3
-    
+    MS_LIB_STATUS_OK,
+    MS_LIB_STATUS_INVALID_BOARD_SIZE,
+    MS_LIB_STATUS_UNSUPPORTED_BOARD_SIZE,
+    MS_LIB_STATUS_INVALID_MINE_CNT,
+    MS_LIB_STATUS_INVALID_LOCATION,
+    MS_LIB_STATUS_CELL_CLEARED_ALREADY,
+    MS_LIB_STATUS_GAME_LOST,
+    MS_LIB_STATUS_GAME_WON,
+    MS_LIB_STATUS_INVALID_CMD,
+    MS_LIB_STATUS_GAME_IN_POGRESS
 }MS_LIB_STATUS_CODES;
 
 const unsigned int MAX_WIDTH = 25; // max width of the board
@@ -26,8 +31,8 @@ MS_LIB_STATUS_CODES MS_initRandomGameBoard(unsigned int len , unsigned int width
 
 MS_LIB_STATUS_CODES MS_initGameBoardWithMinePositions(unsigned int len , unsigned int width , unsigned int minePositions[][2], unsigned int mineCnt);
 
-void MS_getActualBoardState(char myBoard[MAX_LEN][MAX_WIDTH],int len,int width);
+void MS_copyActualBoardTo(char myBoard[MAX_LEN][MAX_WIDTH],int len,int width);
 void MS_printBoard(char myBoard[MAX_LEN][MAX_WIDTH],int len,int width);
-bool MS_executeGame(char command,unsigned int x , unsigned int y);
+MS_LIB_STATUS_CODES MS_executeGame(char command,unsigned int x , unsigned int y);
 
 #endif

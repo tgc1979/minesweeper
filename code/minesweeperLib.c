@@ -29,6 +29,7 @@ static Cell *getCellPtrByCoordinates(int x, int y);
  * @brief Globals
  */
 Game game;
+
 /**
  * @brief Utility functions
  */
@@ -43,7 +44,7 @@ bool isValid(int row, int col)
 }
 
 /**
- * @brief copies internal game state to user provided game pointer
+ * @brief copies internal game state to destination
  */
 void MS_getGameState(Game *destBoard)
 {
@@ -61,12 +62,12 @@ const unsigned char *MS_getModuleVersion(void)
 /**
  * @brief initialises a game to default values
  */
-MS_LIB_STATUS_CODES MS_initGame(unsigned int mineCnt , unsigned int gameBoardSize)
+MS_LIB_STATUS_CODES MS_initGame(unsigned int mineCnt, unsigned int gameBoardSize)
 {
-    if(mineCnt > MAX_MINE)
+    if (mineCnt > MAX_MINE)
         return MS_LIB_STATUS_INVALID_MINE_CNT;
-    if(gameBoardSize > MAX_SIDE)
-        return MS_LIB_STATUS_UNSUPPORTED_BOARD_SIZE; 
+    if (gameBoardSize > MAX_SIDE)
+        return MS_LIB_STATUS_BOARD_SIZE_EXCEEDS_LIMIT;
 
     game.mineCnt = mineCnt;
     game.side = gameBoardSize;
@@ -101,14 +102,20 @@ void addMines(void)
 Cell getCellByCoordinates(int x, int y)
 {
     Cell currCell;
-    for (int i = 0; i < game.side * game.side; i++)
+    if (!isValid(x, y))
     {
-
-        currCell = game.cells[i];
-        if (currCell.x == x && currCell.y == y)
-            break;
+        currCell.cellState = notvalid;
     }
+    else
+    {
+        for (int i = 0; i < game.side * game.side; i++)
+        {
 
+            currCell = game.cells[i];
+            if (currCell.x == x && currCell.y == y)
+                break;
+        }
+    }
     return currCell;
 }
 
@@ -118,7 +125,7 @@ Cell getCellByCoordinates(int x, int y)
 Cell *getCellPtrByCoordinates(int x, int y)
 {
     Cell *currCell = 0;
-    for (int i = 0; i < game.side*game.side; i++)
+    for (int i = 0; i < game.side * game.side; i++)
     {
         currCell = &game.cells[i];
         if (currCell->x == x && currCell->y == y)
@@ -138,19 +145,22 @@ MS_LIB_STATUS_CODES MS_GenRandomMines()
 
     /* Intializes random number generator */
     time_t t;
-    srand(time(NULL));   // Initialization, should only be called once.
+    srand(time(NULL)); // Initialization, should only be called once.
     for (int i = 0; i < game.mineCnt; i++)
     {
-      
-        unsigned int random = (rand()%20 )% game.side*game.side;
-        Cell cell = game.cells[random];
-      
-        if(!isValid(cell.x,cell.y))
+
+        unsigned int random1 = 1 + (int) (10.0 * (rand() / (RAND_MAX + 1.0)));
+        unsigned int random2 = 1 + (int) (10.0 * (rand() / (RAND_MAX + 1.0)));
+
+        game.mines[i].cellState = initial;
+        game.mines[i].x = random1 % game.side;
+        game.mines[i].y = random2 % game.side;
+
+        if (!isValid(game.mines[i].x, game.mines[i].y))
             return MS_LIB_STATUS_INVALID_LOCATION;
 
         game.mines[i].cellState = hasmine;
-        game.mines[i].x = cell.x;
-        game.mines[i].y = cell.y;
+
     }
 
     addMines();
@@ -168,7 +178,7 @@ MS_LIB_STATUS_CODES MS_GenUserProvidedMines(unsigned int minePositions[][2])
         unsigned int x = minePositions[i][0];
         unsigned int y = minePositions[i][1];
 
-        if(!isValid(x,y))
+        if (!isValid(x, y))
             return MS_LIB_STATUS_INVALID_LOCATION;
 
         game.mines[i].cellState = hasmine;

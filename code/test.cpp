@@ -7,7 +7,11 @@
 #include "minesweeperLib.h"
 static     Game myGame;
 
-#define UNIT_TEST
+//#define UNIT_TEST
+
+/**
+ * @brief prints the game board. If showMines is true then mines will be visible
+*/
 
 void printBoard(Game game,bool showMines)
 {
@@ -73,6 +77,8 @@ int main()
     cell =  getCellByCoordinates( 5,0);
     assert(cell.cellState!=flagged);
     assert(cell.cellState==cleared);
+    cell =  getCellByCoordinates(150,0);
+    assert(cell.cellState==notvalid);
     
 #else
 
@@ -88,9 +94,9 @@ int main()
 
 
 
-    unsigned int isRandomBoard = 2;
-    //   printf("Press (1)To initialise a random board or (2) To enter mine positions:");
-    //   scanf("%u",&isRandomBoard);
+    unsigned int isRandomBoard = 1;
+    printf("Press (1)To initialise a random board or (2) To enter mine positions:");
+    scanf("%u",&isRandomBoard);
 
 
     if (isRandomBoard != 1 && isRandomBoard != 2)

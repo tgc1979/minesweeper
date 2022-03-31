@@ -12,6 +12,10 @@ extern "C" {
  * @brief Error and Status Codes
 */
 
+#define MAX_SIDE (15)
+#define MAX_MINE (10)
+
+
 typedef enum
 {
     MS_LIB_STATUS_OK,
@@ -26,8 +30,6 @@ typedef enum
     MS_LIB_STATUS_GAME_IN_POGRESS
 }MS_LIB_STATUS_CODES;
 
-const unsigned int SIDE = 8;        
-const unsigned int MINE_CNT = 10;   
 
 typedef enum{
 initial,
@@ -48,10 +50,11 @@ typedef struct
 
 typedef struct
 {
+    unsigned int side;
     unsigned int mineCnt;
     unsigned int remainingMoves;
-    Cell cells[SIDE*SIDE];
-    Cell mines[MINE_CNT];
+    Cell cells[MAX_SIDE*MAX_SIDE];
+    Cell mines[MAX_MINE];
 } Game;
 
 
@@ -62,6 +65,7 @@ MS_LIB_STATUS_CODES MS_GenUserProvidedMines( unsigned int minePositions[][2]);
 void MS_getGameState(Game *destBoard);
 MS_LIB_STATUS_CODES MS_executeGame(char command,unsigned int x , unsigned int y);
 extern Cell getCellByCoordinates(int x , int y);
+void MS_initGame(unsigned int mineCnt , unsigned int gameBoardSize);
 
 #if defined (__cplusplus)
 }

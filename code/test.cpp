@@ -11,19 +11,19 @@ int i, j;
  
     printf ("    ");
  
-    for (i=0; i<SIDE; i++)
+    for (i=0; i<game.side; i++)
         printf ("%d ", i);
  
     printf ("\n\n");
  
-    for (i=0; i<SIDE; i++)
+    for (i=0; i<game.side; i++)
     {
         printf ("%d   ", i);
 
-        for (j=0; j<SIDE; j++)
+        for (j=0; j<game.side; j++)
          {
              int x = i;
-             int y = j%SIDE;
+             int y = j%game.side;
 
              Cell cell =  getCellByCoordinates( x,y);
              switch(cell.cellState)
@@ -48,9 +48,11 @@ int i, j;
 }
 int main()
 {
-    unsigned int isRandomBoard = 1;
+    unsigned int isRandomBoard = 2;
     //   printf("Press (1)To initialise a random board or (2) To enter mine positions:");
     //   scanf("%u",&isRandomBoard);
+
+    MS_initGame(10,8);
 
     if (isRandomBoard != 1 && isRandomBoard != 2)
     {
@@ -75,7 +77,6 @@ int main()
             return -1;
         }
     }
-
 
 
     char command = 'C';

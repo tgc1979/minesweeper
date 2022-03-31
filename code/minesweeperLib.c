@@ -61,8 +61,13 @@ const unsigned char *MS_getModuleVersion(void)
 /**
  * @brief initialises a game to default values
  */
-void MS_initGame(unsigned int mineCnt , unsigned int gameBoardSize)
+MS_LIB_STATUS_CODES MS_initGame(unsigned int mineCnt , unsigned int gameBoardSize)
 {
+    if(mineCnt > MAX_MINE)
+        return MS_LIB_STATUS_INVALID_MINE_CNT;
+    if(gameBoardSize > MAX_SIDE)
+        return MS_LIB_STATUS_UNSUPPORTED_BOARD_SIZE; 
+
     game.mineCnt = mineCnt;
     game.side = gameBoardSize;
     game.remainingMoves = game.side * game.side - game.mineCnt;
@@ -73,6 +78,7 @@ void MS_initGame(unsigned int mineCnt , unsigned int gameBoardSize)
         game.cells[i].x = i / game.side;
         game.cells[i].y = i % game.side;
     }
+    return MS_LIB_STATUS_OK;
 }
 
 /**
@@ -138,6 +144,10 @@ MS_LIB_STATUS_CODES MS_GenRandomMines()
       
         unsigned int random = (rand()%20 )% game.side*game.side;
         Cell cell = game.cells[random];
+      
+        if(!isValid(cell.x,cell.y))
+            return MS_LIB_STATUS_INVALID_LOCATION;
+
         game.mines[i].cellState = hasmine;
         game.mines[i].x = cell.x;
         game.mines[i].y = cell.y;
@@ -157,6 +167,9 @@ MS_LIB_STATUS_CODES MS_GenUserProvidedMines(unsigned int minePositions[][2])
     {
         unsigned int x = minePositions[i][0];
         unsigned int y = minePositions[i][1];
+
+        if(!isValid(x,y))
+            return MS_LIB_STATUS_INVALID_LOCATION;
 
         game.mines[i].cellState = hasmine;
         game.mines[i].x = x;

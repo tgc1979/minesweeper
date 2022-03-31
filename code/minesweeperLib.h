@@ -65,7 +65,7 @@ MS_LIB_STATUS_CODES MS_GenUserProvidedMines( unsigned int minePositions[][2]);
 void MS_getGameState(Game *destBoard);
 MS_LIB_STATUS_CODES MS_executeGame(char command,unsigned int x , unsigned int y);
 extern Cell getCellByCoordinates(int x , int y);
-void MS_initGame(unsigned int mineCnt , unsigned int gameBoardSize);
+MS_LIB_STATUS_CODES MS_initGame(unsigned int mineCnt , unsigned int gameBoardSize);
 
 #if defined (__cplusplus)
 }
